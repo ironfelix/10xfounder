@@ -20,6 +20,9 @@ from contacts_comparator import ContactsComparator
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-in-production'  # Измените в продакшене!
 
+# Поддержка работы в подпапке (например, /comparator)
+app.config['APPLICATION_ROOT'] = '/comparator'
+
 # Настройки
 UPLOAD_FOLDER = Path('uploads')
 RESULTS_FOLDER = Path('results')
@@ -50,12 +53,13 @@ def cleanup_old_files(folder, max_age_hours=24):
     except Exception as e:
         print(f"Ошибка очистки: {e}")
 
-@app.route('/')
+@app.route('/comparator/')
+@app.route('/comparator')
 def index():
     """Главная страница"""
     return render_template('index.html')
 
-@app.route('/upload', methods=['POST'])
+@app.route('/comparator/upload', methods=['POST'])
 def upload_files():
     """Обрабатывает загрузку и сравнение файлов"""
     try:
@@ -198,7 +202,7 @@ def upload_files():
     except Exception as e:
         return jsonify({'error': f'Ошибка обработки: {str(e)}'}), 500
 
-@app.route('/download/<session_id>/<filename>')
+@app.route('/comparator/download/<session_id>/<filename>')
 def download_file(session_id, filename):
     """Скачивает результирующий файл"""
     try:
@@ -210,7 +214,7 @@ def download_file(session_id, filename):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/health')
+@app.route('/comparator/health')
 def health():
     """Проверка работоспособности сервиса"""
     return jsonify({'status': 'ok', 'timestamp': datetime.now().isoformat()})
