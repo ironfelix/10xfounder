@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сравнитель баз контактов</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .file-upload:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+
+        .file-upload.active {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-label {
+            display: block;
+            cursor: pointer;
+        }
+
+        .file-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .file-upload h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .file-name {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .options {
+            margin-bottom: 30px;
+        }
+
+        .options h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .radio-option input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .radio-option label {
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .compare-btn {
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .compare-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .compare-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-card h4 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .duplicates-list {
+            margin-bottom: 30px;
+        }
+
+        .duplicates-list h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .duplicate-item {
+            background: #f8f9ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .duplicate-item strong {
+            color: #667eea;
+        }
+
+        .download-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            text-align: center;
+            transition: background 0.3s;
+        }
+
+        .download-btn:hover {
+            background: #218838;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .upload-section {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Сравнитель баз контактов</h1>
+            <p>Найдите дубликаты между двумя файлами за секунды</p>
+        </div>
+
+        <div class="card">
+            <div class="error" id="errorMessage"></div>
+
+            <form id="uploadForm">
+                <div class="upload-section">
+                    <div class="file-upload" id="fileUpload1">
+                        <label class="file-upload-label" for="file1">
+                            <div class="file-icon">📁</div>
+                            <h3>Файл 1</h3>
+                            <p>Нажмите для выбора<br>CSV или Excel</p>
+                            <div class="file-name" id="fileName1"></div>
+                        </label>
+                        <input type="file" id="file1" name="file1" accept=".csv,.xlsx,.xls">
+                    </div>
+
+                    <div class="file-upload" id="fileUpload2">
+                        <label class="file-upload-label" for="file2">
+                            <div class="file-icon">📁</div>
+                            <h3>Файл 2</h3>
+                            <p>Нажмите для выбора<br>CSV или Excel</p>
+                            <div class="file-name" id="fileName2"></div>
+                        </label>
+                        <input type="file" id="file2" name="file2" accept=".csv,.xlsx,.xls">
+                    </div>
+                </div>
+
+                <div class="options">
+                    <h3>Критерий поиска дубликатов:</h3>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="matchAll" name="match_by" value="all" checked>
+                            <label for="matchAll">Все (Email + Телефон + Имя)</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="matchEmail" name="match_by" value="email">
+                            <label for="matchEmail">Только Email</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="matchPhone" name="match_by" value="phone">
+                            <label for="matchPhone">Только Телефон</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="matchName" name="match_by" value="name">
+                            <label for="matchName">Только Имя</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="compare-btn" id="compareBtn" disabled>
+                    Сравнить файлы
+                </button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Обрабатываем файлы...</p>
+            </div>
+        </div>
+
+        <div class="card results" id="results">
+            <h2 style="margin-bottom: 20px;">📊 Результаты сравнения</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Файл 1</h4>
+                    <div class="number" id="file1Count">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Файл 2</h4>
+                    <div class="number" id="file2Count">0</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);">
+                    <h4>Дубликаты</h4>
+                    <div class="number" id="duplicatesCount">0</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);">
+                    <h4>Уникальных</h4>
+                    <div class="number" id="uniqueCount">0</div>
+                </div>
+            </div>
+
+            <div class="duplicates-list" id="duplicatesList"></div>
+
+            <div class="download-section" id="downloadSection"></div>
+        </div>
+    </div>
+
+    <script>
+        const file1Input = document.getElementById('file1');
+        const file2Input = document.getElementById('file2');
+        const fileName1 = document.getElementById('fileName1');
+        const fileName2 = document.getElementById('fileName2');
+        const fileUpload1 = document.getElementById('fileUpload1');
+        const fileUpload2 = document.getElementById('fileUpload2');
+        const compareBtn = document.getElementById('compareBtn');
+        const uploadForm = document.getElementById('uploadForm');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Обработка выбора файлов
+        file1Input.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                fileName1.textContent = e.target.files[0].name;
+                fileUpload1.classList.add('active');
+            } else {
+                fileName1.textContent = '';
+                fileUpload1.classList.remove('active');
+            }
+            checkFiles();
+        });
+
+        file2Input.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                fileName2.textContent = e.target.files[0].name;
+                fileUpload2.classList.add('active');
+            } else {
+                fileName2.textContent = '';
+                fileUpload2.classList.remove('active');
+            }
+            checkFiles();
+        });
+
+        function checkFiles() {
+            compareBtn.disabled = !(file1Input.files.length > 0 && file2Input.files.length > 0);
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+            setTimeout(() => {
+                errorMessage.classList.remove('active');
+            }, 5000);
+        }
+
+        // Обработка отправки формы
+        uploadForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(uploadForm);
+            
+            loading.classList.add('active');
+            results.classList.remove('active');
+            compareBtn.disabled = true;
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Ошибка обработки');
+                }
+
+                // Показываем результаты
+                displayResults(data);
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                loading.classList.remove('active');
+                compareBtn.disabled = false;
+            }
+        });
+
+        function displayResults(data) {
+            // Обновляем статистику
+            document.getElementById('file1Count').textContent = data.file1_count.toLocaleString();
+            document.getElementById('file2Count').textContent = data.file2_count.toLocaleString();
+            document.getElementById('duplicatesCount').textContent = data.duplicates_count.toLocaleString();
+            document.getElementById('uniqueCount').textContent = 
+                (data.unique_file1_count + data.unique_file2_count).toLocaleString();
+
+            // Показываем примеры дубликатов
+            const duplicatesList = document.getElementById('duplicatesList');
+            if (data.duplicates_count > 0 && data.duplicates_sample) {
+                let html = '<h3>Примеры найденных дубликатов (первые 10):</h3>';
+                data.duplicates_sample.forEach((dup, index) => {
+                    html += `<div class="duplicate-item">`;
+                    html += `<strong>Дубликат #${index + 1}</strong> (${dup.match_type || 'неизвестно'})<br>`;
+                    
+                    // Показываем основные поля
+                    Object.keys(dup).forEach(key => {
+                        if (!key.includes('normalized') && !key.includes('source') && 
+                            key !== 'match_type' && dup[key] !== null) {
+                            html += `${key}: ${dup[key]}<br>`;
+                        }
+                    });
+                    
+                    html += `</div>`;
+                });
+                duplicatesList.innerHTML = html;
+            } else {
+                duplicatesList.innerHTML = '<h3>✅ Дубликаты не найдены!</h3>';
+            }
+
+            // Показываем ссылки для скачивания
+            const downloadSection = document.getElementById('downloadSection');
+            let downloadHtml = '<h3 style="grid-column: 1/-1; margin-bottom: 10px;">📥 Скачать результаты:</h3>';
+            
+            if (data.summary_file) {
+                downloadHtml += `<a href="/download/${data.session_id}/${data.summary_file}" class="download-btn">
+                    📊 Сводный отчет
+                </a>`;
+            }
+            
+            if (data.duplicates_file) {
+                downloadHtml += `<a href="/download/${data.session_id}/${data.duplicates_file}" class="download-btn">
+                    🔄 Дубликаты
+                </a>`;
+            }
+            
+            if (data.unique1_file) {
+                downloadHtml += `<a href="/download/${data.session_id}/${data.unique1_file}" class="download-btn">
+                    📁 Уникальные из файла 1
+                </a>`;
+            }
+            
+            if (data.unique2_file) {
+                downloadHtml += `<a href="/download/${data.session_id}/${data.unique2_file}" class="download-btn">
+                    📁 Уникальные из файла 2
+                </a>`;
+            }
+            
+            downloadSection.innerHTML = downloadHtml;
+
+            // Показываем блок результатов
+            results.classList.add('active');
+            results.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
